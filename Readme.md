@@ -71,3 +71,12 @@ func main() {
 
 	app.Post("/:id", validation.ValidateBodyAs(models.InputFrom{}),structureForms)
 .....
+```
+### Error Response In Your Api Model
+
+```go
+func SetResponseBody(fn func(ctx *fiber.Ctx,errs []interface{})){
+    
+    ctx.Json(MyResponseProto{Data:nil,Error:errs})
+}
+``

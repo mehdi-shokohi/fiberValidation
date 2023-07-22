@@ -7,3 +7,8 @@ type ValidationError struct {
 	Param string
 	Message string
 }
+
+
+type Response struct{
+	Error interface{}
+}
