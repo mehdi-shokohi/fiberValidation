@@ -61,7 +61,7 @@ func load() {
 		validate.RegisterValidation(k, v)
 	}
 	if response == nil {
-		SetResponseBuilder(func(field, tag, param, errormessage string) any {
+		SetErrorBuilder(func(field, tag, param, errormessage string) any {
 			var el ValidationError
 			el.Message = errormessage
 
@@ -78,7 +78,7 @@ func RegisterValidation(tag string, fn func(validator.FieldLevel) bool) {
 	}
 	validatorStack[tag] = fn
 }
-func SetResponseBuilder(f func(field, tag, param, errormessage string) any) {
+func SetErrorBuilder(f func(field, tag, param, errormessage string) any) {
 	response = f
 }
 

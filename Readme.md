@@ -49,7 +49,7 @@ func TestVal(t *testing.T) {
 
 ```go
 
-	SetResponseBuilder(func(field, tag, param, errormessage string) any {
+	SetErrorBuilder(func(field, tag, param, errormessage string) any {
 		var el MyValidateError
 		el.Message = fmt.Sprintf("%s : %s",field,errormessage)
 		el.Field = field
@@ -76,7 +76,7 @@ func main() {
 
 ```go
 func SetResponseBody(fn func(ctx *fiber.Ctx,errs []interface{})){
-    
+
     ctx.Json(MyResponseProto{Data:nil,Error:errs})
 }
 ``

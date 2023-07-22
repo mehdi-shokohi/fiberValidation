@@ -30,7 +30,7 @@ func TestVal(t *testing.T) {
 	})
 
 	
-	SetResponseBuilder(func(field, tag, param, errormessage string) any {
+	SetErrorBuilder(func(field, tag, param, errormessage string) any {
 		var el MyValidateError
 		el.Message = fmt.Sprintf("%s : %s",field,errormessage)
 		el.Field = field
