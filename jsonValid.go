@@ -45,6 +45,7 @@ func ValidateBodyAs[T any](body T) func(c *fiber.Ctx) error {
 				return c.Status(fiber.StatusBadRequest).JSON(errs)
 			}
 			errorBody(c,errs)
+			return nil
 		}
 		return c.Next()
 	}
