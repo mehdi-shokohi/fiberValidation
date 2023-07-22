@@ -10,7 +10,7 @@ import (
 var validate *validator.Validate
 var validatorStack map[string]func(validator.FieldLevel) bool
 var response func(field, tag, param, errormessage string) any
-
+var errorBody func(ctx *fiber.Ctx,errs []interface{})
 func JsonValidation[T any](o T) []interface{} {
 	if validate == nil {
 		load()
@@ -34,13 +34,17 @@ func JsonValidation[T any](o T) []interface{} {
 func ValidateBodyAs[T any](body T) func(c *fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		// bodyModel := T
-		if err := c.BodyParser(body); err != nil {
+		if err := c.BodyParser(&body); err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.ErrBadRequest)
 		}
 
 		errs := JsonValidation(body)
 		if len(errs) > 0 {
-			return c.Status(fiber.StatusBadRequest).JSON(errs)
+			if errorBody==nil{
+
+				return c.Status(fiber.StatusBadRequest).JSON(errs)
+			}
+			errorBody(c,errs)
 		}
 		return c.Next()
 	}
@@ -75,4 +79,8 @@ func RegisterValidation(tag string, fn func(validator.FieldLevel) bool) {
 }
 func SetResponseBuilder(f func(field, tag, param, errormessage string) any) {
 	response = f
+}
+
+func SetResponseBody(fn func(ctx *fiber.Ctx,errs []interface{})){
+errorBody = fn
 }

@@ -36,6 +36,7 @@ func TestVal(t *testing.T) {
 		el.Field = field
 		return el
 	})
+	
 
 	errrs := JsonValidation(ts)
 	for _, v := range errrs {
