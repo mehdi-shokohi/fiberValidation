@@ -21,6 +21,12 @@ type MyValidateError struct {
 func TestVal(t *testing.T) {
 	ts := InputFrom{Name: "mehdi shokohi", Data: "df"}
 	RegisterValidation("username", func(fl validator.FieldLevel) bool {
+		if valuer, ok := fl.Field().Interface().(string); ok {
+			//checking username existence in database
+			if valuer=="mate jason"{
+				return false
+			}
+		}
 		match, _ := regexp.MatchString("^[a-zA-Z0-9]*[-]?[a-zA-Z0-9]*$", fl.Field().String())
 		return match
 	})
