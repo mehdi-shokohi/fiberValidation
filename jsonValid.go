@@ -33,12 +33,12 @@ func JsonValidation[T any](o T) []interface{} {
 
 func ValidateBodyAs[T any](body T) func(c *fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		bodyModel := new(T)
-		if err := c.BodyParser(bodyModel); err != nil {
+		// bodyModel := T
+		if err := c.BodyParser(body); err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.ErrBadRequest)
 		}
 
-		errs := JsonValidation(bodyModel)
+		errs := JsonValidation(body)
 		if len(errs) > 0 {
 			return c.Status(fiber.StatusBadRequest).JSON(errs)
 		}

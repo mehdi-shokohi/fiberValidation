@@ -45,7 +45,7 @@ func TestVal(t *testing.T) {
 ```
 
 
-###define custom error response
+### define custom error response
 
 ```go
 
@@ -58,7 +58,7 @@ func TestVal(t *testing.T) {
 
 ```
 
-###Go-Fiber Middleware
+### Go-Fiber Middleware
 
 ```go
 func main() {
