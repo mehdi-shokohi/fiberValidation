@@ -35,7 +35,7 @@ func JsonValidation[T any](o T) []interface{} {
 func ValidateBodyAs[T any](body T) func(c *fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		if err := c.BodyParser(&body); err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.ErrBadRequest)
+			return c.Status(fiber.StatusBadRequest).JSON(Response{Error: err.Error()})
 		}
 
 		errs := JsonValidation(body)
