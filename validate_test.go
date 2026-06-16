@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"testing"
@@ -10,8 +11,12 @@ import (
 
 type InputFrom struct {
 	Title string `json:"title" validate:"required,min=3,max=32"`
-	Name  string `json:"name" validate:"username,required,min=3,max=25" errmsg:"invalid username"`
-	Data  string `json:"data" validate:"required,mydata" errmsg:"invalid data"`
+	Name  string `json:"name" validate:"required,min=3,max=25" `
+	Data  Spec `json:"data" validate:"required"`
+}
+type Spec struct{
+	Attr string  `json:"attr" validate:"inernalId"`
+	Param []string `json:"param" validate:"required"`
 }
 type MyValidateError struct {
 	Field string
@@ -19,8 +24,22 @@ type MyValidateError struct {
 	Message string
 }
 func TestVal(t *testing.T) {
-	ts := InputFrom{Name: "mehdi shokohi", Data: "df"}
-	RegisterValidation("username", func(fl validator.FieldLevel) bool {
+	ts := InputFrom{Name: "hi", Data:Spec{Attr: "e1",Param: []string{"n1","n2"}}}
+	fv:=NewFiberValidation(WithResponseCast(func(errs []ValidationError) any {
+		errList:=[]map[string]any{}
+		for _,el:=range errs{
+			errList=append(errList, map[string]any{
+				"field":el.Field,
+				"ns":el.NameSpace,
+				"message":el.Message,
+
+
+			})
+		}
+		return map[string]any{"data":nil,"errors":errList}
+	}))
+	// fv:=GetValidator()
+	fv.RegisterValidation("username", func(fl validator.FieldLevel) bool {
 		if valuer, ok := fl.Field().Interface().(string); ok {
 			//checking username existence in database
 			if valuer=="mate jason"{
@@ -29,24 +48,21 @@ func TestVal(t *testing.T) {
 		}
 		match, _ := regexp.MatchString("^[a-zA-Z0-9]*[-]?[a-zA-Z0-9]*$", fl.Field().String())
 		return match
-	})
-	RegisterValidation("mydata", func(fl validator.FieldLevel) bool {
-		match, _ := regexp.MatchString("^/d*$", fl.Field().String())
+	},"field {0} must be compatible with pattern {1}","username","1-no space")
+	fv.RegisterValidation("inernalId", func(fl validator.FieldLevel) bool {
+		match, err := regexp.MatchString("^/d*$", fl.Field().String())
+		if err!=nil{
+			return false
+		}
 		return match
-	})
+	},"field {0} must be compatible with pattern {1}","inernalId","1-no space")
+
 
 	
-	SetErrorBuilder(func(field, tag, param, errormessage string) any {
-		var el MyValidateError
-		el.Message = fmt.Sprintf("%s : %s",field,errormessage)
-		el.Field = field
-		return el
-	})
-	
-
-	errrs := JsonValidation(ts)
+	errrs := fv.JsonValidation(ts)
 	for _, v := range errrs {
-		fmt.Println(v)
+		b,_:=json.Marshal(v)
+		fmt.Println(string(b))
 	}
 
 }

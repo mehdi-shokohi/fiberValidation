@@ -1,87 +1,118 @@
 package validation
 
 import (
-	"reflect"
-
+	enLocale "github.com/go-playground/locales/en"
+	"github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v3"
 )
 
-var validate *validator.Validate
-var validatorStack map[string]func(validator.FieldLevel) bool
-var response func(field, tag, param, errormessage string) any
-var errorBody func(ctx fiber.Ctx, errs []interface{})
+var vfglob *FiberValidator
 
-func JsonValidation[T any](o T) []interface{} {
-	if validate == nil {
-		load()
+type FiberValidator struct {
+	validate *validator.Validate
+	response func(errs []ValidationError) any
+	// errorFiberCtx func(ctx fiber.Ctx, )error
+	trans ut.Translator
+}
+func WithTranslator(ut ut.Translator)func(*FiberValidator){
+	return func(fv *FiberValidator) {
+		fv.trans = ut
 	}
-	var errors []interface{}
+}
+func WithResponseCast(castFn func(errs []ValidationError)any)func(*FiberValidator){
+	return func(fv *FiberValidator) {
+		fv.response = castFn
+	}
+}
+func (fv *FiberValidator) SetTranslator(ut ut.Translator) {
+	fv.trans = ut
+}
 
-	err := validate.Struct(o)
+func NewFiberValidation(opts ...func(*FiberValidator)) *FiberValidator {
+	fv := &FiberValidator{
+		validate: validator.New(),
+	}
+	for _,o:=range opts{
+		o(fv)
+	}
+	if fv.response == nil {
+		fv.response = func(errs []ValidationError) any {
+
+			return map[string]any{"data": nil,"error":errs}
+		}
+	}
+	if fv.trans==nil{
+	en := enLocale.New()
+	uni := ut.New(en, en)
+
+	fv.trans, _ = uni.GetTranslator("en")
+	}
+	vfglob = fv
+	return fv
+}
+func (fv *FiberValidator) JsonValidation(o any) (errors []ValidationError) {
+
+	err := fv.validate.Struct(o)
+	// return err.(validator.ValidationErrors)
 	if err != nil {
 		for _, err := range err.(validator.ValidationErrors) {
-			rsf := reflect.TypeOf(&o).Elem()
-			field, _ := rsf.FieldByName(err.Field())
-			resp := response(err.Field(), err.Tag(), err.Param(), field.Tag.Get("errmsg"))
-			errors = append(errors, resp)
+			errors = append(errors, ValidationError{
+				Field: err.Field(),
+				Rule: err.Tag(),
+				Message: err.Translate(fv.trans),
+				Param: err.Param(),
+				NameSpace: err.Namespace(),
+			})
 		}
 
 	}
-	return errors
+	return 
 
 }
-
+func GetValidator() *FiberValidator {
+	if vfglob == nil {
+		vfglob = NewFiberValidation()
+	}
+	return vfglob
+}
 func ValidateBodyAs[T any](body T) func(c fiber.Ctx) error {
 	return func(c fiber.Ctx) error {
 		if err := c.Bind().Body(&body); err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(Response{Error: err.Error()})
 		}
-
-		errs := JsonValidation(body)
+		v := GetValidator()
+		errs := v.JsonValidation(body)
 		if len(errs) > 0 {
-			if errorBody == nil {
+			return c.Status(fiber.StatusBadRequest).JSON(v.response(errs))
 
-				return c.Status(fiber.StatusBadRequest).JSON(Response{Error: errs})
-			}
-			errorBody(c, errs)
-			return nil
 		}
 		return c.Next()
 	}
 }
 
-func load() {
-	validate = validator.New()
-	if validatorStack == nil {
-		validatorStack = make(map[string]func(validator.FieldLevel) bool)
-	}
-	for k, v := range validatorStack {
+func (fv *FiberValidator) RegisterValidation(tag string, fn func(validator.FieldLevel) bool, errMessagePattern string, params ...string) {
 
-		validate.RegisterValidation(k, v)
-	}
-	if response == nil {
-		SetErrorBuilder(func(field, tag, param, errormessage string) any {
-			var el ValidationError
-			el.Message = errormessage
+	fv.validate.RegisterValidation(tag, fn)
+	fv.validate.RegisterTranslation(tag, fv.trans, func(ut ut.Translator) error {
+		return ut.Add(
+			tag,
+			errMessagePattern,
+			true,
+		)
 
-			el.Field = field
-			el.Rule = tag
-			el.Param = param
-			return el
-		})
-	}
-}
-func RegisterValidation(tag string, fn func(validator.FieldLevel) bool) {
-	if validatorStack == nil {
-		validatorStack = make(map[string]func(validator.FieldLevel) bool)
-	}
-	validatorStack[tag] = fn
-}
-func SetErrorBuilder(f func(field, tag, param, errormessage string) any) {
-	response = f
+	}, func(ut ut.Translator, fe validator.FieldError) string {
+		t, _ := ut.T(tag, params...)
+
+		return t
+	})
+
 }
 
-func SetResponseBody(fn func(ctx fiber.Ctx, errs []interface{})) {
-	errorBody = fn
-}
+// func (fv *FiberValidator) SetErrorBuilder(f func(field, tag, param, errormessage string) any) {
+// 	fv.response = f
+// }
+
+// func (fv *FiberValidator) SetResponseBody(fn func(ctx fiber.Ctx, errs []validator.FieldError) error) {
+// 	fv.errorFiberCtx = fn
+// }
