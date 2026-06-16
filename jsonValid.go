@@ -12,7 +12,6 @@ var vfglob *FiberValidator
 type FiberValidator struct {
 	validate *validator.Validate
 	response func(errs []ValidationError) any
-	// errorFiberCtx func(ctx fiber.Ctx, )error
 	trans ut.Translator
 }
 func WithTranslator(ut ut.Translator)func(*FiberValidator){
@@ -38,7 +37,6 @@ func NewFiberValidation(opts ...func(*FiberValidator)) *FiberValidator {
 	}
 	if fv.response == nil {
 		fv.response = func(errs []ValidationError) any {
-
 			return map[string]any{"data": nil,"error":errs}
 		}
 	}
@@ -54,7 +52,6 @@ func NewFiberValidation(opts ...func(*FiberValidator)) *FiberValidator {
 func (fv *FiberValidator) JsonValidation(o any) (errors []ValidationError) {
 
 	err := fv.validate.Struct(o)
-	// return err.(validator.ValidationErrors)
 	if err != nil {
 		for _, err := range err.(validator.ValidationErrors) {
 			errors = append(errors, ValidationError{
@@ -108,11 +105,3 @@ func (fv *FiberValidator) RegisterValidation(tag string, fn func(validator.Field
 	})
 
 }
-
-// func (fv *FiberValidator) SetErrorBuilder(f func(field, tag, param, errormessage string) any) {
-// 	fv.response = f
-// }
-
-// func (fv *FiberValidator) SetResponseBody(fn func(ctx fiber.Ctx, errs []validator.FieldError) error) {
-// 	fv.errorFiberCtx = fn
-// }

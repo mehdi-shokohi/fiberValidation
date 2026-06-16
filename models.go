@@ -1,15 +1,13 @@
 package validation
 
-
 type ValidationError struct {
-	Field string
-	Rule  string
-	NameSpace string
-	Param string
-	Message string
+	Field     string `json:"field"`
+	Rule      string `json:"rule"`
+	NameSpace string `json:"ns"`
+	Param     string `json:"param"`
+	Message   string `json:"message"`
 }
 
-
-type Response struct{
+type Response struct {
 	Error interface{}
 }
