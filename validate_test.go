@@ -44,14 +44,18 @@ func TestVal(t *testing.T) {
 		}
 		match, _ := regexp.MatchString("^[a-zA-Z0-9]*[-]?[a-zA-Z0-9]*$", fl.Field().String())
 		return match
-	},"field {0} must be compatible with pattern {1}","username","1-no space")
+	},"field {0} must be compatible with pattern {1}",func(fe validator.FieldError) []string {
+		return []string{fe.Field(),"^[a-zA-Z0-9]*[-]?[a-zA-Z0-9]*$"}
+	})
 	fv.RegisterValidation("inernalId", func(fl validator.FieldLevel) bool {
 		match, err := regexp.MatchString("^/d*$", fl.Field().String())
 		if err!=nil{
 			return false
 		}
 		return match
-	},"field {0} must be compatible with pattern {1}","inernalId","1-no space")
+	},"field {0} must be compatible with pattern {1}",func(fe validator.FieldError) []string {
+		return []string{fe.Field(),"^/d"}
+	})
 
 
 	
@@ -77,7 +81,9 @@ func TestDefaultInstance(t *testing.T) {
 		}
 		match, _ := regexp.MatchString("^[a-zA-Z0-9]*[-]?[a-zA-Z0-9]*$", fl.Field().String())
 		return match
-	},"field {0} must be compatible with pattern {1}","username","^[a-zA-Z0-9]*[-]?[a-zA-Z0-9]*$")
+	},"field {0} must be compatible with pattern {1}",func(fe validator.FieldError) []string {
+		return []string{fe.Field(),"^[a-zA-Z0-9]*[-]?[a-zA-Z0-9]*$"}
+	})
 
 
 
@@ -87,7 +93,9 @@ func TestDefaultInstance(t *testing.T) {
 			return false
 		}
 		return match
-	},"field {0} must be compatible with pattern {1}","inernalId","only number ID")
+	},"field {0} must be compatible with pattern {1}",func(fe validator.FieldError) []string {
+		return []string{fe.Field(),"^/d"}
+	})
 
 
 	

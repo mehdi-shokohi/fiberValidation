@@ -88,7 +88,7 @@ func ValidateBodyAs[T any](body T) func(c fiber.Ctx) error {
 	}
 }
 
-func (fv *FiberValidator) RegisterValidation(tag string, fn func(validator.FieldLevel) bool, errMessagePattern string, params ...string) {
+func (fv *FiberValidator) RegisterValidation(tag string, fn func(validator.FieldLevel) bool, errMessagePattern string,extractErrField func(validator.FieldError)[]string) {
 
 	fv.validate.RegisterValidation(tag, fn)
 	fv.validate.RegisterTranslation(tag, fv.trans, func(ut ut.Translator) error {
@@ -99,7 +99,7 @@ func (fv *FiberValidator) RegisterValidation(tag string, fn func(validator.Field
 		)
 
 	}, func(ut ut.Translator, fe validator.FieldError) string {
-		t, _ := ut.T(tag, params...)
+		t, _ := ut.T(tag, extractErrField(fe)...)
 
 		return t
 	})
