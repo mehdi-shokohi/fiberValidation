@@ -73,13 +73,14 @@ func GetValidator() *FiberValidator {
 	}
 	return vfglob
 }
-func ValidateBodyAs[T any](body T) func(c fiber.Ctx) error {
+func ValidateBodyAs[T any]() func(c fiber.Ctx) error {
 	return func(c fiber.Ctx) error {
-		if err := c.Bind().Body(&body); err != nil {
+		var nbody T
+		if err := c.Bind().Body(&nbody); err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(Response{Error: err.Error()})
 		}
 		v := GetValidator()
-		errs := v.JsonValidation(body)
+		errs := v.JsonValidation(&nbody)
 		if len(errs) > 0 {
 			return c.Status(fiber.StatusBadRequest).JSON(v.response(errs))
 
